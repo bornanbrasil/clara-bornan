@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clara-bornan
+  namespace: client-saas
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: clara-bornan
+  template:
+    metadata:
+      labels:
+        app: clara-bornan
+    spec:
+      containers:
+        - name: clara-bornan
+          image: bornan.azurecr.io/clara-bornan:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "docker/entrypoints/rails.sh"]
+          args: ["bundle", "exec", "rails", "s", "-p", "3000", "-b", "0.0.0.0"]
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: clara-bornan-config
+            - secretRef:
+                name: clara-bornan-secrets
+          env:
+            - name: RAILS_ENV
+              value: "production"
+            - name: NODE_ENV
+              value: "production"
+            - name: ENABLE_ACCOUNT_SIGNUP
+              value: "true"
+            - name: LOG_LEVEL
+              value: "debug"
+            - name: LOG_SIZE
+              value: "500"
+            - name: DEFAULT_LOCALE
+              value: "pt-BR"
+            - name: CREATE_NEW_ACCOUNT_FROM_DASHBOARD
+              value: "true"
+            - name: INSTALLATION_PRICING_PLAN
+              value: "enterprise"
+            - name: INSTALLATION_PRICING_PLAN_QUANTITY
+              value: "999999"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "400Mi"
+            limits:
+              cpu: "300m"
+              memory: "1Gi"
+          startupProbe:
+            httpGet:
+              path: /
+              port: 3000
+            failureThreshold: 30
+            periodSeconds: 10
+            initialDelaySeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 45
+            periodSeconds: 30
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 120
+            timeoutSeconds: 5
+            failureThreshold: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clara-bornan-sidekiq
+  namespace: client-saas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clara-bornan-sidekiq
+  template:
+    metadata:
+      labels:
+        app: clara-bornan-sidekiq
+    spec:
+      containers:
+        - name: chatwoot-sidekiq
+          image: bornan.azurecr.io/clara-bornan:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "docker/entrypoints/rails.sh"]
+          args: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
+          envFrom:
+            - configMapRef:
+                name: clara-bornan-config
+            - secretRef:
+                name: clara-bornan-secrets
+          env:
+            - name: RAILS_ENV
+              value: "production"
+            - name: NODE_ENV
+              value: "production"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "400Mi"
+            limits:
+              cpu: "300m"
+              memory: "1Gi"

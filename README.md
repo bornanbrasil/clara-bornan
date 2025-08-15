@@ -20,7 +20,6 @@ The modern customer support platform, an open-source alternative to Intercom, Ze
   <a href="https://artifacthub.io/packages/helm/chatwoot/chatwoot"><img src="https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/artifact-hub" alt="Artifact HUB"></a>
 </p>
 
-
 <p>
   <a href="https://heroku.com/deploy?template=https://github.com/chatwoot/chatwoot/tree/master" alt="Deploy to Heroku">
      <img width="150" alt="Deploy" src="https://www.herokucdn.com/deploy/button.svg"/>
@@ -65,6 +64,7 @@ Publish help articles, FAQs, and guides through the built-in Help Center Portal.
 - Agent Capacity Management to balance workload across the team.
 
 #### Customer Data & Segmentation
+
 - Contact Management with profiles and interaction history.
 - Contact Segments and Notes for targeted communication.
 - Campaigns to proactively engage customers.
@@ -72,6 +72,7 @@ Publish help articles, FAQs, and guides through the built-in Help Center Portal.
 - Pre-Chat Forms to collect user information before starting conversations.
 
 #### Integrations
+
 - Slack Integration to manage conversations directly from Slack.
 - Dialogflow Integration for chatbot automation.
 - Dashboard Apps to embed internal tools within Chatwoot.
@@ -80,11 +81,11 @@ Publish help articles, FAQs, and guides through the built-in Help Center Portal.
 - Create and manage Linear tickets within Chatwoot.
 
 #### Reports & Insights
+
 - Live View of ongoing conversations for real-time monitoring.
 - Conversation, Agent, Inbox, Label, and Team Reports for operational visibility.
 - CSAT Reports to measure customer satisfaction.
 - Downloadable Reports for offline analysis and reporting.
-
 
 ## Documentation
 
@@ -108,7 +109,6 @@ Deploying Chatwoot to Heroku is a breeze. It's as simple as clicking this button
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/chatwoot/chatwoot/tree/master)
 
 Follow this [link](https://www.chatwoot.com/docs/environment-variables) to understand setting the correct environment variables for the app to work with all the features. There might be breakages if you do not set the relevant environment variables.
-
 
 ### DigitalOcean 1-Click Kubernetes deployment
 
@@ -135,6 +135,5 @@ If you need help or just want to hang out, come, say hi on our [Discord](https:/
 Thanks goes to all these [wonderful people](https://www.chatwoot.com/docs/contributors):
 
 <a href="https://github.com/chatwoot/chatwoot/graphs/contributors"><img src="https://opencollective.com/chatwoot/contributors.svg?width=890&button=false" /></a>
-
 
 *Chatwoot* &copy; 2017-2025, Chatwoot Inc - Released under the MIT License.
