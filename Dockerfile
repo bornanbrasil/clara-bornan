@@ -26,11 +26,13 @@ ENV RAILS_ENV=production
 ENV NODE_OPTIONS="--max-old-space-size=4096 --openssl-legacy-provider"
 
 # Toolchain/headers + libs p/ compilar gems nativas
+# - postgresql-dev: necessário apenas no build para compilar a gem 'pg'
 RUN apk update && apk add --no-cache \
   build-base \
   linux-headers \
-  openssl openssl-dev \
-  postgresql-dev \  # necessário APENAS no build para compilar a gem 'pg'
+  openssl \
+  openssl-dev \
+  postgresql-dev \
   tzdata \
   git \
   xz \
