@@ -12,11 +12,17 @@ env:
   CLUSTER_NAME: cluster-bornan
   CLUSTER_RESOURCE_GROUP: CloudBornan
   CLUSTER_RESOURCE_TYPE: Microsoft.ContainerService/managedClusters
-  DEPLOYMENT_MANIFEST_PATH: ./k8s
+  DEPLOYMENT_MANIFEST_PATH: |
+    ./k8s/configmap.yaml
+    ./k8s/secret.yaml
+    ./k8s/deployment-rails.yaml
+    ./k8s/deployment-sidekiq.yaml
+    ./k8s/hpa.yaml
+    ./k8s/service.yaml
+    ./k8s/ingress.yaml
   DOCKER_FILE: ./Dockerfile
   BUILD_CONTEXT_PATH: ./
   NAMESPACE: client-saas
-  ENABLENAMESPACECREATION: false
   AUTH_TYPE: SERVICE_PRINCIPAL
 
 jobs:
@@ -36,7 +42,6 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           auth-type: ${{ env.AUTH_TYPE }}
 
-      # Build ÚNICO com múltiplas tags (sha + latest) e arg do commit
       - name: Build and push images to ACR (sha + latest)
         run: |
           GIT_SHA=$(git rev-parse HEAD)
@@ -48,22 +53,6 @@ jobs:
             --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }} \
             --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:latest \
             ${{ env.BUILD_CONTEXT_PATH }}
-
-      #
-      - name: Log into ACR - Image Lates
-        run: |
-          az acr login -n ${{ env.AZURE_CONTAINER_REGISTRY }}
-
-      # Builds and pushes an image up to your Azure Container Registry
-      - name: Build and push image to ACR - Latest
-        run: |
-          GIT_SHA=$(git rev-parse HEAD)
-          az acr build \
-            --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:latest \
-            --registry ${{ env.AZURE_CONTAINER_REGISTRY }} \
-            -g ${{ env.ACR_RESOURCE_GROUP }} \
-            --build-arg GIT_SHA=$GIT_SHA \
-            -f ${{ env.DOCKER_FILE }} ${{ env.BUILD_CONTEXT_PATH }}
 
   deploy:
     permissions:
@@ -103,27 +92,6 @@ jobs:
         run: |
           result=$(az aks show --resource-group ${{ env.CLUSTER_RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --query "apiServerAccessProfile.enablePrivateCluster" -o tsv)
           echo "PRIVATE_CLUSTER=$result" >> "$GITHUB_OUTPUT"
-
-      - name: Create Namespace
-        if: ${{ env.ENABLENAMESPACECREATION == 'true' }}
-        run: |
-          if [ "${{ steps.isPrivate.outputs.PRIVATE_CLUSTER }}" = 'true' ]; then
-            command_id=$(az aks command invoke --resource-group ${{ env.CLUSTER_RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --command "kubectl get namespace ${{ env.NAMESPACE }} || kubectl create namespace ${{ env.NAMESPACE }}" --query id -o tsv)
-            exitCode=$(az aks command result --resource-group ${{ env.CLUSTER_RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --command-id $command_id --query exitCode -o tsv)
-            if [ "$exitCode" -ne 0 ]; then exit "$exitCode"; fi
-          else
-            kubectl get namespace ${{ env.NAMESPACE }} || kubectl create namespace ${{ env.NAMESPACE }}
-          fi
-
-      - name: Validate Namespace Exists
-        run: |
-          if [ "${{ steps.isPrivate.outputs.PRIVATE_CLUSTER }}" = 'true' ]; then
-            command_id=$(az aks command invoke --resource-group ${{ env.CLUSTER_RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --command "kubectl get namespace ${{ env.NAMESPACE }}" --query id -o tsv)
-            exitCode=$(az aks command result --resource-group ${{ env.CLUSTER_RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --command-id $command_id --query exitCode -o tsv)
-            if [ "$exitCode" -ne 0 ]; then exit "$exitCode"; fi
-          else
-            kubectl get namespace ${{ env.NAMESPACE }}
-          fi
 
       - name: Deploy manifests to AKS
         uses: Azure/k8s-deploy@v5

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clara-bornan-sidekiq
+  namespace: client-saas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clara-bornan-sidekiq
+  template:
+    metadata:
+      labels:
+        app: clara-bornan-sidekiq
+    spec:
+      containers:
+        - name: sidekiq
+          image: bornan.azurecr.io/clara-bornan:latest
+          imagePullPolicy: IfNotPresent
+          args: ["bundle","exec","sidekiq","-C","config/sidekiq.yml"]
+          envFrom:
+            - configMapRef:
+                name: clara-bornan-config
+            - secretRef:
+                name: clara-bornan-secrets
+          env:
+            - name: RAILS_ENV
+              value: "production"
+            - name: NODE_ENV
+              value: "production"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "400Mi"
+            limits:
+              cpu: "300m"
+              memory: "1Gi"
