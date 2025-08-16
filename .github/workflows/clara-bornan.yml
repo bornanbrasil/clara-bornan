@@ -13,7 +13,7 @@ env:
   CLUSTER_RESOURCE_GROUP: CloudBornan
   CLUSTER_RESOURCE_TYPE: Microsoft.ContainerService/managedClusters
   DEPLOYMENT_MANIFEST_PATH: ./k8s
-  DOCKER_FILE: ./docker/Dockerfile
+  DOCKER_FILE: ./Dockerfile
   BUILD_CONTEXT_PATH: ./
   NAMESPACE: client-saas
   ENABLENAMESPACECREATION: false
@@ -26,10 +26,8 @@ jobs:
       id-token: write
     runs-on: ubuntu-latest
     steps:
-      # Checks out the repository this file is in
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # Logs in with your Azure credentials
       - name: Azure login
         uses: azure/login@v2.2.0
         with:
@@ -38,32 +36,18 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           auth-type: ${{ env.AUTH_TYPE }}
 
-      # Logs into ACR
-      - name: Log into ACR
-        run: |
-          az acr login -n ${{ env.AZURE_CONTAINER_REGISTRY }}
-
-      # Builds and pushes an image up to your Azure Container Registry
-      - name: Build and push image to ACR
-        run: |
-          az acr build --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }} --registry ${{ env.AZURE_CONTAINER_REGISTRY }} -g ${{ env.ACR_RESOURCE_GROUP }} -f ${{ env.DOCKER_FILE }} ${{ env.BUILD_CONTEXT_PATH }}
-
-      # Logs into ACR
-      - name: Log into ACR II
-        run: |
-          az acr login -n ${{ env.AZURE_CONTAINER_REGISTRY }}
-
-      # Builds and pushes an image up to your Azure Container Registry
-      - name: Build and push image to ACR
+      # Build ÚNICO com múltiplas tags (sha + latest) e arg do commit
+      - name: Build and push images to ACR (sha + latest)
         run: |
           GIT_SHA=$(git rev-parse HEAD)
           az acr build \
-            --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:latest \
             --registry ${{ env.AZURE_CONTAINER_REGISTRY }} \
-            -g ${{ env.ACR_RESOURCE_GROUP }} \
+            --resource-group ${{ env.ACR_RESOURCE_GROUP }} \
+            --file ${{ env.DOCKER_FILE }} \
             --build-arg GIT_SHA=$GIT_SHA \
-            -f ${{ env.DOCKER_FILE }} ${{ env.BUILD_CONTEXT_PATH }}
-
+            --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }} \
+            --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:latest \
+            ${{ env.BUILD_CONTEXT_PATH }}
 
   deploy:
     permissions:
@@ -73,10 +57,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [buildImage]
     steps:
-      # Checks out the repository this file is in
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # Logs in with your Azure credentials
       - name: Azure login
         uses: azure/login@v2.2.0
         with:
@@ -85,13 +67,11 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           auth-type: ${{ env.AUTH_TYPE }}
 
-      # Use kubelogin to configure your kubeconfig for Azure auth
       - name: Set up kubelogin for non-interactive login
         uses: azure/use-kubelogin@v1
         with:
           kubelogin-version: 'v0.0.25'
 
-      # Retrieves your Azure Kubernetes Service cluster's kubeconfig file
       - name: Get K8s context
         uses: azure/aks-set-context@v4
         with:
@@ -101,47 +81,35 @@ jobs:
           use-kubelogin: 'true'
           resource-type: ${{ env.CLUSTER_RESOURCE_TYPE }}
 
-      # Checks if the AKS cluster is private
       - name: Is private cluster
         if: ${{ env.CLUSTER_RESOURCE_TYPE != 'Microsoft.ContainerService/fleets' }}
         id: isPrivate
         run: |
-          result=$(az aks show --resource-group ${{ env.CLUSTER_RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --query "apiServerAccessProfile.enablePrivateCluster")
+          result=$(az aks show --resource-group ${{ env.CLUSTER_RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --query "apiServerAccessProfile.enablePrivateCluster" -o tsv)
           echo "PRIVATE_CLUSTER=$result" >> "$GITHUB_OUTPUT"
 
-      # Create Namespace
       - name: Create Namespace
         if: ${{ env.ENABLENAMESPACECREATION == 'true' }}
         run: |
-          if [ ${{ steps.isPrivate.outputs.PRIVATE_CLUSTER}} == 'true' ]; then
+          if [ "${{ steps.isPrivate.outputs.PRIVATE_CLUSTER }}" = 'true' ]; then
             command_id=$(az aks command invoke --resource-group ${{ env.CLUSTER_RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --command "kubectl get namespace ${{ env.NAMESPACE }} || kubectl create namespace ${{ env.NAMESPACE }}" --query id -o tsv)
-            result=$(az aks command result --resource-group ${{ env.CLUSTER_RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --command-id $command_id)
-            echo "Command Result: $result"
             exitCode=$(az aks command result --resource-group ${{ env.CLUSTER_RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --command-id $command_id --query exitCode -o tsv)
-            if [ $exitCode -ne 0 ]; then
-              exit $exitCode
-            fi
+            if [ "$exitCode" -ne 0 ]; then exit "$exitCode"; fi
           else
             kubectl get namespace ${{ env.NAMESPACE }} || kubectl create namespace ${{ env.NAMESPACE }}
           fi
 
-      # Validate Namespace exists
       - name: Validate Namespace Exists
         run: |
-          if [ ${{ steps.isPrivate.outputs.PRIVATE_CLUSTER}} == 'true' ]; then
+          if [ "${{ steps.isPrivate.outputs.PRIVATE_CLUSTER }}" = 'true' ]; then
             command_id=$(az aks command invoke --resource-group ${{ env.CLUSTER_RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --command "kubectl get namespace ${{ env.NAMESPACE }}" --query id -o tsv)
-            result=$(az aks command result --resource-group ${{ env.CLUSTER_RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --command-id $command_id)
-            echo "Command Result: $result"
             exitCode=$(az aks command result --resource-group ${{ env.CLUSTER_RESOURCE_GROUP }} --name ${{ env.CLUSTER_NAME }} --command-id $command_id --query exitCode -o tsv)
-            if [ $exitCode -ne 0 ]; then
-              exit $exitCode
-            fi
+            if [ "$exitCode" -ne 0 ]; then exit "$exitCode"; fi
           else
             kubectl get namespace ${{ env.NAMESPACE }}
           fi
 
-      # Deploys application based on given manifest  file
-      - name: Deploys application
+      - name: Deploy manifests to AKS
         uses: Azure/k8s-deploy@v5
         with:
           action: deploy
@@ -154,4 +122,3 @@ jobs:
           namespace: ${{ env.NAMESPACE }}
           resource-type: ${{ env.CLUSTER_RESOURCE_TYPE }}
           annotate-namespace: ${{ env.CLUSTER_RESOURCE_TYPE != 'Microsoft.ContainerService/fleets' }}
-
