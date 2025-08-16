@@ -13,10 +13,24 @@ spec:
       labels:
         app: clara-bornan-sidekiq
     spec:
+      initContainers:
+        - name: wait-for-db
+          image: bornan.azurecr.io/clara-bornan:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh","-c"]
+          args:
+            - >
+              until pg_isready -h "$POSTGRES_HOST" -p "${POSTGRES_PORT:-5432}" -U "$POSTGRES_USERNAME";
+              do echo 'Aguardando Postgres...'; sleep 2; done
+          envFrom:
+            - configMapRef:
+                name: clara-bornan-config
+            - secretRef:
+                name: clara-bornan-secrets
       containers:
         - name: sidekiq
           image: bornan.azurecr.io/clara-bornan:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           args: ["bundle","exec","sidekiq","-C","config/sidekiq.yml"]
           envFrom:
             - configMapRef:

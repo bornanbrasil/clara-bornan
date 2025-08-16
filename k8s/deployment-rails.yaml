@@ -21,9 +21,9 @@ spec:
       containers:
         - name: clara-bornan
           image: bornan.azurecr.io/clara-bornan:latest
-          imagePullPolicy: IfNotPresent
-          command: ["/bin/sh", "docker/entrypoints/rails.sh"]
-          args: ["bundle", "exec", "rails", "s", "-p", "3000", "-b", "0.0.0.0"]
+          imagePullPolicy: Always
+          command: ["/app/docker/entrypoints/rails.sh"]
+          args: ["bundle","exec","rails","s","-p","3000","-b","0.0.0.0"]
           ports:
             - containerPort: 3000
           envFrom:
@@ -47,19 +47,22 @@ spec:
             httpGet:
               path: /
               port: 3000
-            failureThreshold: 30
+            failureThreshold: 60
             periodSeconds: 10
+            timeoutSeconds: 5
           readinessProbe:
             httpGet:
               path: /
               port: 3000
-            initialDelaySeconds: 20
+            initialDelaySeconds: 30
             periodSeconds: 15
             timeoutSeconds: 5
+            failureThreshold: 6
           livenessProbe:
             httpGet:
               path: /
               port: 3000
-            initialDelaySeconds: 60
-            periodSeconds: 60
+            initialDelaySeconds: 90
+            periodSeconds: 30
             timeoutSeconds: 5
+            failureThreshold: 5

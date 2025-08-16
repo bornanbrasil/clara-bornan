@@ -14,7 +14,7 @@ env:
   CLUSTER_RESOURCE_TYPE: Microsoft.ContainerService/managedClusters
   DEPLOYMENT_MANIFEST_PATH: |
     ./k8s/configmap.yaml
-    ./k8s/secret.yaml
+    ./k8s/secrets.yaml
     ./k8s/deployment-rails.yaml
     ./k8s/deployment-sidekiq.yaml
     ./k8s/hpa.yaml

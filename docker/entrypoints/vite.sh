@@ -1,12 +1,13 @@
 #!/bin/sh
-set -x
+set -eu
 
-rm -rf /app/tmp/pids/server.pid
-rm -rf /app/tmp/cache/*
+APP_DIR="/app"
 
-pnpm store prune
+rm -f "${APP_DIR}/tmp/pids/server.pid"
+rm -rf "${APP_DIR}/tmp/cache/"*
+
+pnpm store prune || true
 pnpm install --force
 
 echo "Ready to run Vite development server."
-
 exec "$@"

@@ -6,22 +6,15 @@ metadata:
 data:
   NODE_ENV: "production"
   DEFAULT_LOCALE: "pt-BR"
-
-  # Enterprise / Branding
+  REDIS_URL: "redis://redis.shared.svc.cluster.local:6379"
   INSTALLATION_NAME: "Bornan Chat"
   INSTALLATION_PRICING_PLAN: "enterprise"
   INSTALLATION_PRICING_PLAN_QUANTITY: "9999"
-
-  # App behavior
   FRONTEND_URL: "https://chat.bornan.com.br"
   FORCE_SSL: "false"
   ENABLE_ACCOUNT_SIGNUP: "false"
-
-  # Logging
   RAILS_LOG_TO_STDOUT: "true"
   LOG_LEVEL: "debug"
   LOG_SIZE: "500"
-
-  # Threads / Perf
   RAILS_MAX_THREADS: "5"
-
+  PGSSLMODE: "require"
