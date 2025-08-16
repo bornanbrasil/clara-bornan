@@ -4,7 +4,7 @@ metadata:
   name: clara-bornan
   namespace: client-saas
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -76,7 +76,6 @@ spec:
         - name: sidekiq
           image: bornan.azurecr.io/clara-bornan:sha-PLACEHOLDER
           imagePullPolicy: IfNotPresent
-          # Mantém ENTRYPOINT da imagem; só ajusta args para sidekiq
           args: ["bundle","exec","sidekiq","-C","config/sidekiq.yml"]
           envFrom:
             - configMapRef:
@@ -93,15 +92,3 @@ spec:
             limits:
               cpu: "300m"
               memory: "1Gi"
-          livenessProbe:
-            exec:
-              command: ["sh","-lc","ps aux | grep '[s]idekiq'"]
-            initialDelaySeconds: 30
-            periodSeconds: 30
-            timeoutSeconds: 5
-          readinessProbe:
-            exec:
-              command: ["sh","-lc","ps aux | grep '[s]idekiq'"]
-            initialDelaySeconds: 15
-            periodSeconds: 15
-            timeoutSeconds: 5
