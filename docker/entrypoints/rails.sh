@@ -1,34 +1,30 @@
 #!/bin/sh
+set -euo pipefail
 
-set -x
-
-# Remove a potentially pre-existing server.pid for Rails.
-rm -rf /app/tmp/pids/server.pid
+# Limpeza de artefatos
+rm -f /app/tmp/pids/server.pid
 rm -rf /app/tmp/cache/*
 
-echo "Waiting for postgres to become ready...."
+echo "Waiting for postgres to become ready..."
+$(docker/entrypoints/helpers/pg_database_url.rb) >/dev/null 2>&1 || true
+PG_READY="pg_isready -h ${POSTGRES_HOST:-localhost} -p ${POSTGRES_PORT:-5432} -U ${POSTGRES_USERNAME:-postgres}"
 
-# Let DATABASE_URL env take presedence over individual connection params.
-# This is done to avoid printing the DATABASE_URL in the logs
-$(docker/entrypoints/helpers/pg_database_url.rb)
-PG_READY="pg_isready -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USERNAME"
-
-until $PG_READY
-do
-  sleep 2;
+until $PG_READY >/dev/null 2>&1; do
+  sleep 2
 done
+echo "Postgres is ready."
 
-echo "Database ready to accept connections."
+# NÃO instale gems em runtime em produção. Garantimos no build.
+# bundle install  # <- remova
 
-#install missing gems for local dev as we are using base image compiled for production
-bundle install
+# Executa migrations + seeds idempotentes
+if bundle exec rake -T | grep -q "db:chatwoot_prepare"; then
+  echo "Running db:chatwoot_prepare..."
+  bundle exec rails db:chatwoot_prepare
+else
+  echo "Running rails db:prepare..."
+  bundle exec rails db:prepare
+fi
 
-BUNDLE="bundle check"
-
-until $BUNDLE
-do
-  sleep 2;
-done
-
-# Execute the main process of the container
+echo "Starting process: $*"
 exec "$@"
