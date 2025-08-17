@@ -31,7 +31,8 @@ spec:
         - name: sidekiq
           image: bornan.azurecr.io/clara-bornan:latest
           imagePullPolicy: Always
-          args: ["bundle","exec","sidekiq","-C","config/sidekiq.yml"]
+          command: ["/bin/sh", "docker/entrypoints/rails.sh"]
+          args: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
           envFrom:
             - configMapRef:
                 name: clara-bornan-config
