@@ -307,6 +307,9 @@ Rails.application.routes.draw do
 
       namespace :integrations do
         resources :webhooks, only: [:create]
+
+        # 🔹 Nossa rota nova:
+        resources :bornan, only: [:create], path: 'bornan/provision'
       end
 
       resource :profile, only: [:show, :update] do

@@ -1,41 +1,17 @@
 <script setup>
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import { useStore } from 'vuex';
-import Twilio from './Twilio.vue';
-import ThreeSixtyDialogWhatsapp from './360DialogWhatsapp.vue';
-import CloudWhatsapp from './CloudWhatsapp.vue';
-import WhatsappEmbeddedSignup from './WhatsappEmbeddedSignup.vue';
-import { FEATURE_FLAGS } from 'dashboard/featureFlags';
+// Importações Bornan
+import BornanQr from './whatsapp/BornanQr.vue';
+import BornanBusiness from './whatsapp/BornanBusiness.vue';
 
 const route = useRoute();
 const router = useRouter();
-const { t } = useI18n();
-const store = useStore();
 
 const PROVIDER_TYPES = {
-  WHATSAPP: 'whatsapp',
-  TWILIO: 'twilio',
-  WHATSAPP_CLOUD: 'whatsapp_cloud',
-  WHATSAPP_EMBEDDED: 'whatsapp_embedded',
-  THREE_SIXTY_DIALOG: '360dialog',
+  BORNAN_QR: 'bornan_qr', // Bornan
+  BORNAN_BUSINESS: 'bornan_business', // Bornan
 };
-
-const hasWhatsappAppId = computed(() => {
-  return (
-    window.chatwootConfig?.whatsappAppId &&
-    window.chatwootConfig.whatsappAppId !== 'none'
-  );
-});
-
-const isWhatsappEmbeddedSignupEnabled = computed(() => {
-  const accountId = route.params.accountId;
-  return store.getters['accounts/isFeatureEnabledonAccount'](
-    accountId,
-    FEATURE_FLAGS.WHATSAPP_EMBEDDED_SIGNUP
-  );
-});
 
 const selectedProvider = computed(() => route.query.provider);
 
@@ -44,18 +20,20 @@ const showProviderSelection = computed(() => !selectedProvider.value);
 const showConfiguration = computed(() => Boolean(selectedProvider.value));
 
 const availableProviders = computed(() => [
+  // Bornan - exibidos como WhatsApp para manter a experiência nativa
   {
-    value: PROVIDER_TYPES.WHATSAPP,
-    label: t('INBOX_MGMT.ADD.WHATSAPP.PROVIDERS.WHATSAPP_CLOUD'),
-    description: t('INBOX_MGMT.ADD.WHATSAPP.PROVIDERS.WHATSAPP_CLOUD_DESC'),
+    value: PROVIDER_TYPES.BORNAN_QR,
+    label: 'WhatsApp – QR Code',
+    description: 'Conexão via QR Code.',
     icon: '/assets/images/dashboard/channels/whatsapp.png',
   },
   {
-    value: PROVIDER_TYPES.TWILIO,
-    label: t('INBOX_MGMT.ADD.WHATSAPP.PROVIDERS.TWILIO'),
-    description: t('INBOX_MGMT.ADD.WHATSAPP.PROVIDERS.TWILIO_DESC'),
-    icon: '/assets/images/dashboard/channels/twilio.png',
+    value: PROVIDER_TYPES.BORNAN_BUSINESS,
+    label: 'Cloud API Business',
+    description: 'Conexão via API Oficial (Token, Number ID e Business ID).',
+    icon: '/assets/images/dashboard/channels/whatsapp.png',
   },
+  // Até aqui
 ]);
 
 const selectProvider = providerValue => {
@@ -64,30 +42,6 @@ const selectProvider = providerValue => {
     params: route.params,
     query: { provider: providerValue },
   });
-};
-
-const shouldShowEmbeddedSignup = provider => {
-  // Check if the feature is enabled for the account
-  if (!isWhatsappEmbeddedSignupEnabled.value) {
-    return false;
-  }
-
-  return (
-    (provider === PROVIDER_TYPES.WHATSAPP && hasWhatsappAppId.value) ||
-    provider === PROVIDER_TYPES.WHATSAPP_EMBEDDED
-  );
-};
-
-const shouldShowCloudWhatsapp = provider => {
-  // If embedded signup feature is enabled and app ID is configured, don't show cloud whatsapp
-  if (isWhatsappEmbeddedSignupEnabled.value && hasWhatsappAppId.value) {
-    return false;
-  }
-
-  // Show cloud whatsapp when:
-  // 1. Provider is whatsapp AND
-  // 2. Either no app ID is configured OR embedded signup feature is disabled
-  return provider === PROVIDER_TYPES.WHATSAPP;
 };
 </script>
 
@@ -138,18 +92,10 @@ const shouldShowCloudWhatsapp = provider => {
 
     <div v-else-if="showConfiguration">
       <div class="px-6 py-5 rounded-2xl border bg-n-solid-2 border-n-weak">
-        <WhatsappEmbeddedSignup
-          v-if="shouldShowEmbeddedSignup(selectedProvider)"
+        <BornanQr v-if="selectedProvider === PROVIDER_TYPES.BORNAN_QR" />
+        <BornanBusiness
+          v-else-if="selectedProvider === PROVIDER_TYPES.BORNAN_BUSINESS"
         />
-        <CloudWhatsapp v-else-if="shouldShowCloudWhatsapp(selectedProvider)" />
-        <Twilio
-          v-else-if="selectedProvider === PROVIDER_TYPES.TWILIO"
-          type="whatsapp"
-        />
-        <ThreeSixtyDialogWhatsapp
-          v-else-if="selectedProvider === PROVIDER_TYPES.THREE_SIXTY_DIALOG"
-        />
-        <CloudWhatsapp v-else />
       </div>
     </div>
   </div>

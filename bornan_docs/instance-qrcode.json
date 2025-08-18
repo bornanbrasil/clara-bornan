@@ -1,0 +1,23 @@
+{
+  "instanceName": "9955-cwId-2", // Concatenar Nome da Caixa de Entrada Informado+ cwId + AccountId do Chatwoot
+  "qrcode": true, // Padrao
+  "integration": "WHATSAPP-BAILEYS", // Padrao
+  "rejectCall": false, // Padrao
+  "groupsIgnore": false, // Padrao
+  "alwaysOnline": true, // Padrao
+  "readMessages": true, // Padrao
+  "readStatus": false, // Padrao
+  "syncFullHistory": false, // Padrao
+  "chatwootAccountId": "2", // Buscar da conta
+  "chatwootToken": "3fsBjCRrzg4", // Buscar do usuario que esta criando
+  "chatwootUrl": "https://chat.bornan.com.br", // Padrao
+  "chatwootSignMsg": false, // Padrao
+  "chatwootReopenConversation": true, // Padrao
+  "chatwootConversationPending": true, // Padrao
+  "chatwootImportContacts": true, // Padrao
+  "chatwootNameInbox": "9955-cwId-2", // Nome da Caixa de Entrada
+  "chatwootMergeBrazilContacts": true,  // Padrao
+  "chatwootImportMessages": true,  // Padrao
+  "chatwootDaysLimitImportMessages": 60,  // Padrao
+  "organization": "Name organization" // Buscar da conta
+}
