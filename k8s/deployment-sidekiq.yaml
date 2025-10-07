@@ -45,8 +45,8 @@ spec:
               value: "production"
           resources:
             requests:
-              cpu: "100m"
-              memory: "400Mi"
+              cpu: "50m"
+              memory: "100Mi"
             limits:
               cpu: "300m"
               memory: "1Gi"
